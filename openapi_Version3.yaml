@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: BikeBoost API
+  version: 0.1.0
+paths:
+  /auth/register:
+    post:
+      summary: Criar usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Token
+  /profile:
+    get:
+      summary: Recupera perfil do atleta
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Atualiza perfil do atleta
+      requestBody:
+        required: true
+  /generate-workout:
+    post:
+      summary: Gera treino (chama IA)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Workout JSON
+  /subscribe:
+    post:
+      summary: Criar assinatura (Stripe)
+      requestBody:
+        required: true
+  /strava/oauth:
+    get:
+      summary: OAuth Strava callback
+  /sync/strava/upload:
+    post:
+      summary: Upload de treino para Strava (TCX/GPX)
