@@ -39,3 +39,6 @@ temp/
 # PID files
 *.pid
 server.pid
+
+# SQLite DB
+backend/*.sqlite
