@@ -30,5 +30,5 @@
       "last 1 safari version"
     ]
   },
-"proxy": "https://orange-guide-wv9gxg99pjwfg967-3001.app.github.dev/"
+"proxy": "http://localhost:3001"
 }
