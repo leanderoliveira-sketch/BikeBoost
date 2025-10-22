@@ -1,24 +1,19 @@
-// ... imports
-import ChatIA from './ChatIA';
+import React from 'react';
+import LoginServicos from './LoginServicos';
+import StravaCallback from './StravaCallback';
+import GoogleFitCallback from './GoogleFitCallback';
 
 const App = () => {
-  // estado tela, usuario etc...
-
+  // ... seu controle de rotas/tela
+  // Exemplo com react-router-dom
   return (
-    <div>
-      <header>
-        {/* ... */}
-        {usuario && (
-          <div>
-            {/* ... outros botões */}
-            <button onClick={() => setTela('ia')}>Assistente IA</button>
-          </div>
-        )}
-      </header>
-      <main>
-        {/* ... outras telas */}
-        {usuario && tela === 'ia' && <ChatIA />}
-      </main>
-    </div>
+    <Routes>
+      <Route path="/" element={<LoginServicos />} />
+      <Route path="/strava-callback" element={<StravaCallback />} />
+      <Route path="/googlefit-callback" element={<GoogleFitCallback />} />
+      {/* ... outras rotas */}
+    </Routes>
   );
 };
+
+export default App;
