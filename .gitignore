@@ -35,3 +35,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# PID files
+*.pid
+server.pid
