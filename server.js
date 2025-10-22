@@ -1,65 +1,71 @@
-// Dependências
 const express = require('express');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
+const db = require('./db');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret';
+
 const app = express();
-const PORT = 3001;
-
-// Simulação de banco de dados (array)
-const users = [];
-const treinos = [];
-
 app.use(cors());
-app.use(express.json());
-
-const SECRET = 'segredo';
+app.use(bodyParser.json());
 
 // Cadastro
-app.post('/api/cadastro', async (req, res) => {
+app.post('/api/cadastro', (req, res) => {
   const { nome, email, senha } = req.body;
-  if (users.find(u => u.email === email)) return res.status(400).json({ erro: 'Email já cadastrado' });
-  const hash = await bcrypt.hash(senha, 8);
-  users.push({ nome, email, senha: hash });
+  const existe = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
+  if (existe) return res.status(400).json({ erro: 'Email já cadastrado' });
+  db.prepare('INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)').run(nome, email, senha);
   res.json({ sucesso: true });
 });
 
 // Login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', (req, res) => {
   const { email, senha } = req.body;
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(400).json({ erro: 'Usuário não encontrado' });
-  const ok = await bcrypt.compare(senha, user.senha);
-  if (!ok) return res.status(401).json({ erro: 'Senha inválida' });
-  const token = jwt.sign({ email }, SECRET, { expiresIn: '1h' });
-  res.json({ token, nome: user.nome });
+  const usuario = db.prepare('SELECT * FROM usuarios WHERE email = ? AND senha = ?').get(email, senha);
+  if (!usuario) return res.status(401).json({ erro: 'Login inválido' });
+  const token = jwt.sign({ id: usuario.id, nome: usuario.nome, email: usuario.email }, JWT_SECRET, { expiresIn: '1d' });
+  res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email } });
 });
 
 // Middleware de autenticação
 function auth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ erro: 'Token não enviado' });
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ erro: 'Token não enviado' });
   try {
-    const [, token] = authHeader.split(' ');
-    jwt.verify(token, SECRET);
+    const [, token] = header.split(' ');
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
     res.status(401).json({ erro: 'Token inválido' });
   }
 }
 
-// Salvar treino
-app.post('/api/treinos', auth, (req, res) => {
-  const { email } = jwt.decode(req.headers.authorization.split(' ')[1]);
-  const treino = { ...req.body, email };
-  treinos.push(treino);
-  res.json({ sucesso: true, treino });
-});
-
-// Listar treinos do usuário
+// CRUD Treinos
 app.get('/api/treinos', auth, (req, res) => {
-  const { email } = jwt.decode(req.headers.authorization.split(' ')[1]);
-  res.json(treinos.filter(t => t.email === email));
+  const treinos = db.prepare('SELECT * FROM treinos WHERE user_id = ?').all(req.user.id);
+  res.json(treinos.map(t => ({ ...t, dias: JSON.parse(t.dias) })));
 });
 
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+app.post('/api/treinos', auth, (req, res) => {
+  const { objetivo, semana, dias } = req.body;
+  db.prepare('INSERT INTO treinos (user_id, objetivo, semana, dias) VALUES (?, ?, ?, ?)').run(
+    req.user.id, objetivo, semana, JSON.stringify(dias)
+  );
+  res.json({ sucesso: true });
+});
+
+app.put('/api/treinos/:id', auth, (req, res) => {
+  const { objetivo, semana, dias } = req.body;
+  db.prepare('UPDATE treinos SET objetivo = ?, semana = ?, dias = ? WHERE id = ? AND user_id = ?').run(
+    objetivo, semana, JSON.stringify(dias), req.params.id, req.user.id
+  );
+  res.json({ sucesso: true });
+});
+
+app.delete('/api/treinos/:id', auth, (req, res) => {
+  db.prepare('DELETE FROM treinos WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+  res.json({ sucesso: true });
+});
+
+app.listen(3001, () => console.log('Backend rodando em http://localhost:3001'));
