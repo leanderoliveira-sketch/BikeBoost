@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-unused-vars
+// filepath: frontend/src/components/LoginPage.jsx
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ export default function LoginPage() {
       setError('Preencha email e senha.');
       return false;
     }
-    const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!re.test(email)) {
       setError('Email inválido.');
       return false;
